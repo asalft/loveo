@@ -16,7 +16,7 @@ API_ID = int(os.environ.get("API_ID", "27227913"))        # required
 API_HASH = os.environ.get("API_HASH", "ba805b182eca99224403dbcd5d4f50aa")         # required
 SESSION = os.environ.get("SESSION", "1BVtsOJwBu4PGy3bEoA2F1-k9hefxyDQ7TVzYnm_Q2M-NkGxHVooXti12skJELegGFEIKAnbE4_6w6pHDu_WSM93tLw1ewmiKsAEK-QOGVT_60xMgAZ5-oJ2EaZ-ys81AZORVdYHqJwHupEt8AKQgtsY0PZQYwCY0XgHgi3MxJOAriOyvPFZiKeDdBJAVpupn9XY9cOo3t5M_72gb9IJCumBHtGbV8zqktMpoi2WxLrCa0yxHm2kvipoL1auaH8XQUVyPZ5MTj1INjzfdrK66CDXxut5t4FEOq_ywTXFV7nQYF3EYK9PTUdpFKZuEA8cTJvJIct9dTDfoKWdmeKber26ZN_8wCEs=")    # يمكن أن يكون string session أو اسم ملف جلسة
 IMAGES_DIR = os.environ.get("IMAGES_DIR", "images")  # مجلد الصور داخل الريبو
-INTERVAL = int(os.environ.get("INTERVAL", "300"))    # بالثواني (افتراضي 300 = 5 دقائق)
+INTERVAL = int(os.environ.get("INTERVAL", "60"))    # بالثواني (افتراضي 300 = 5 دقائق)
 DELETE_OLD = os.environ.get("DELETE_OLD", "yes").lower() in ("yes", "true", "1")
 
 if API_ID == 0 or not API_HASH:
