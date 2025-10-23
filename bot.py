@@ -7,7 +7,7 @@ from telethon import TelegramClient
 from telethon.errors import RPCError
 from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
 from telethon.tl.types import InputPhoto
-from telethon.sessions import StringSession  # مهم: لا يستخدم ملفات SQLite
+from telethon.sessions import StringSession  # لا يستخدم ملفات SQLite
 
 # إعداد اللوقينج
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 # متغيرات بيئة
 API_ID = int(os.environ.get("API_ID", "0"))
 API_HASH = os.environ.get("API_HASH", "")
-SESSION_STRING = os.environ.get("SESSION", "")  # هنا تستخدم String Session
+SESSION_STRING = os.environ.get("SESSION", "")
 IMAGES_DIR = os.environ.get("IMAGES_DIR", "images")
 INTERVAL = int(os.environ.get("INTERVAL", "300"))  # بالثواني
 DELETE_OLD = os.environ.get("DELETE_OLD", "yes").lower() in ("yes", "true", "1")
@@ -34,6 +34,10 @@ async def get_image_paths(dirpath):
         return []
     files = [os.path.join(dirpath, f) for f in os.listdir(dirpath)
              if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))]
+    if not files:
+        log.error("لا توجد صور صالحة في المجلد '%s'.", dirpath)
+    else:
+        log.info("تم العثور على هذه الصور: %s", files)
     return files
 
 async def upload_and_set(photo_path):
@@ -66,7 +70,7 @@ async def delete_old_profile_photos(keep=1):
 async def main_loop():
     images = await get_image_paths(IMAGES_DIR)
     if not images:
-        log.error("لا توجد صور في المجلد '%s'. أضف صور ثم أعد التشغيل.", IMAGES_DIR)
+        log.error("لا توجد صور صالحة. أوقف التشغيل.")
         return
 
     while True:
