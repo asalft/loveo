@@ -2,37 +2,38 @@
 import os
 import asyncio
 import logging
+import random
 from telethon import TelegramClient
 from telethon.errors import RPCError
 from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
 from telethon.tl.types import InputPhoto
+from telethon.sessions import StringSession  # مهم: لا يستخدم ملفات SQLite
 
 # إعداد اللوقينج
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 log = logging.getLogger(__name__)
 
-# متغيرات من البيئة (set these in Heroku Config Vars)
-API_ID = int(os.environ.get("API_ID", "27227913"))        # required
-API_HASH = os.environ.get("API_HASH", "ba805b182eca99224403dbcd5d4f50aa")         # required
-SESSION = os.environ.get("SESSION", "1BVtsOJwBu4PGy3bEoA2F1-k9hefxyDQ7TVzYnm_Q2M-NkGxHVooXti12skJELegGFEIKAnbE4_6w6pHDu_WSM93tLw1ewmiKsAEK-QOGVT_60xMgAZ5-oJ2EaZ-ys81AZORVdYHqJwHupEt8AKQgtsY0PZQYwCY0XgHgi3MxJOAriOyvPFZiKeDdBJAVpupn9XY9cOo3t5M_72gb9IJCumBHtGbV8zqktMpoi2WxLrCa0yxHm2kvipoL1auaH8XQUVyPZ5MTj1INjzfdrK66CDXxut5t4FEOq_ywTXFV7nQYF3EYK9PTUdpFKZuEA8cTJvJIct9dTDfoKWdmeKber26ZN_8wCEs=")    # يمكن أن يكون string session أو اسم ملف جلسة
-IMAGES_DIR = os.environ.get("IMAGES_DIR", "images")  # مجلد الصور داخل الريبو
-INTERVAL = int(os.environ.get("INTERVAL", "60"))    # بالثواني (افتراضي 300 = 5 دقائق)
+# متغيرات بيئة
+API_ID = int(os.environ.get("API_ID", "0"))
+API_HASH = os.environ.get("API_HASH", "")
+SESSION_STRING = os.environ.get("SESSION", "")  # هنا تستخدم String Session
+IMAGES_DIR = os.environ.get("IMAGES_DIR", "images")
+INTERVAL = int(os.environ.get("INTERVAL", "300"))  # بالثواني
 DELETE_OLD = os.environ.get("DELETE_OLD", "yes").lower() in ("yes", "true", "1")
 
-if API_ID == 0 or not API_HASH:
-    log.error("API_ID و API_HASH مطلوبان كمتغير بيئة. أوقف التشغيل.")
+if API_ID == 0 or not API_HASH or not SESSION_STRING:
+    log.error("API_ID و API_HASH و SESSION مطلوبة كمتغيرات بيئة. أوقف التشغيل.")
     raise SystemExit(1)
 
-client = TelegramClient(SESSION, API_ID, API_HASH)
+# إنشاء العميل باستخدام StringSession
+client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
 
 async def get_image_paths(dirpath):
     if not os.path.isdir(dirpath):
         log.error("مجلد الصور غير موجود: %s", dirpath)
         return []
-    files = []
-    for fname in sorted(os.listdir(dirpath)):
-        if fname.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-            files.append(os.path.join(dirpath, fname))
+    files = [os.path.join(dirpath, f) for f in os.listdir(dirpath)
+             if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))]
     return files
 
 async def upload_and_set(photo_path):
@@ -47,21 +48,15 @@ async def upload_and_set(photo_path):
         log.exception("خطأ غير متوقع: %s", e)
 
 async def delete_old_profile_photos(keep=1):
-    # يحذف صور البروفايل القديمة مع الإبقاء على أحدث `keep`
     try:
         photos = await client.get_profile_photos('me')
         if len(photos) <= keep:
             return
-        # نحتفظ بالأحدث (photos كائنات مرتبة من الأقدم إلى الأحدث؟ نتحقق بالترتيب)
         to_delete = photos[:-keep]
         if not to_delete:
             return
-        # تحويل إلى InputPhoto
-        inputs = []
-        for p in to_delete:
-            # كل p هو Photo; نحتاج الى InputPhoto مع id و access_hash
-            if getattr(p, 'id', None) is not None:
-                inputs.append(InputPhoto(id=p.id, access_hash=getattr(p, 'access_hash', 0), file_reference=p.file_reference))
+        inputs = [InputPhoto(id=p.id, access_hash=getattr(p, 'access_hash', 0), file_reference=p.file_reference) 
+                  for p in to_delete if getattr(p, 'id', None) is not None]
         if inputs:
             await client(DeletePhotosRequest(inputs))
             log.info("حُذِف %d من صور الملف الشخصي القديمة.", len(inputs))
@@ -74,19 +69,15 @@ async def main_loop():
         log.error("لا توجد صور في المجلد '%s'. أضف صور ثم أعد التشغيل.", IMAGES_DIR)
         return
 
-    idx = 0
-    # دورة لانهائية: كل INTERVAL ثانية نغير الصورة
     while True:
         try:
-            image = images[idx % len(images)]
+            image = random.choice(images)  # اختيار صورة عشوائية
             await upload_and_set(image)
             if DELETE_OLD:
-                # احتفظ بأحدث صورة واحدة فقط
                 await delete_old_profile_photos(keep=1)
         except Exception as e:
             log.exception("خطأ في الحلقة الرئيسية: %s", e)
 
-        idx += 1
         log.info("ينتظر %s ثانية قبل تغيير الصورة التالية...", INTERVAL)
         await asyncio.sleep(INTERVAL)
 
