@@ -12,9 +12,9 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(m
 log = logging.getLogger(__name__)
 
 # متغيرات من البيئة (set these in Heroku Config Vars)
-API_ID = int(os.environ.get("API_ID", "0"))        # required
-API_HASH = os.environ.get("API_HASH", "")         # required
-SESSION = os.environ.get("SESSION", "session")    # يمكن أن يكون string session أو اسم ملف جلسة
+API_ID = int(os.environ.get("API_ID", "27227913"))        # required
+API_HASH = os.environ.get("API_HASH", "ba805b182eca99224403dbcd5d4f50aa")         # required
+SESSION = os.environ.get("SESSION", "1BVtsOJwBu8VZrzZYFoiCil6QZWFBfgVbQu9nZIjHY4SbD4Bpy2kNbnUbezCJiqXApE_9ax81sEgDlQSinMXtQ3nxPxef7W3G0VPl_V8p0GCmSS5XHonvgACeLKEI0ibZsBSWuzZe-ebjYX5GxA-uQsAj9Ohe-pS4MwhibbaNg03w7mh_LAVy0tZotP5ImtRzl9Bgm2Ret7CU35McdkNaipHZbEwUtei_nXd0XMdSzuRmqBjhuaJhZse8c0lMmMxiI8ihVPxCKrZWQrsov6YCW_gM77bTJaVELJpG22BhBfnIAJwDQ4ytGU_O7ZX0X7nD8WvUxk1xo47sv1x9as3vN2iZYz1yHhw=")    # يمكن أن يكون string session أو اسم ملف جلسة
 IMAGES_DIR = os.environ.get("IMAGES_DIR", "images")  # مجلد الصور داخل الريبو
 INTERVAL = int(os.environ.get("INTERVAL", "300"))    # بالثواني (افتراضي 300 = 5 دقائق)
 DELETE_OLD = os.environ.get("DELETE_OLD", "yes").lower() in ("yes", "true", "1")
